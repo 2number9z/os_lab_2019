@@ -41,16 +41,28 @@ int main(int argc, char **argv) {
           case 0:
             seed = atoi(optarg);
             // your code here
+            if (seed <= 0) {
+            printf("seed is a positive number\n");
+            return 1;
+            }
             // error handling
             break;
           case 1:
             array_size = atoi(optarg);
             // your code here
+            if (array_size <= 0) {
+            printf("array_size is a positive number\n");
+            return 1;
+            }
             // error handling
             break;
           case 2:
             pnum = atoi(optarg);
             // your code here
+            if (pnum < 1) {
+            printf("at least 1 parallel process should be started\n");
+            return 1;
+            }
             // error handling
             break;
           case 3:
@@ -91,7 +103,14 @@ int main(int argc, char **argv) {
   struct timeval start_time;
   gettimeofday(&start_time, NULL);
 
-  for (int i = 0; i < pnum; i++) {
+  FILE *fpmin,*fpmax;
+  int pipefd[2];    // общий pipe для процессов
+
+  int i = 0;
+  for (; i < pnum; i++) {
+    if (pipe(pipefd) == -1) {
+        exit(1);
+    }
     pid_t child_pid = fork();
     if (child_pid >= 0) {
       // successful fork
@@ -103,8 +122,21 @@ int main(int argc, char **argv) {
 
         if (with_files) {
           // use files here
+          struct MinMax min_max = GetMinMax(array,0,array_size);
+          fpmin=fopen("min.txt", "w");
+          fprintf(fpmin,"%d",min_max.min);
+          fpmax=fopen("max.txt","w");
+          fprintf(fpmax,"%d",min_max.max);
+          fclose(fpmin);
+          fclose(fpmax);
+          exit(0);
         } else {
-          // use pipe here
+          close(pipefd[0]); // закрываем сторону для чтения
+          struct MinMax min_max = GetMinMax(array,0,array_size);
+          write(pipefd[1], &min_max.min, sizeof(int));
+          write(pipefd[1], &min_max.max, sizeof(int));
+          close(pipefd[1]);
+          exit(0);
         }
         return 0;
       }
@@ -117,7 +149,7 @@ int main(int argc, char **argv) {
 
   while (active_child_processes > 0) {
     // your code here
-
+    wait(0);
     active_child_processes -= 1;
   }
 
@@ -125,14 +157,28 @@ int main(int argc, char **argv) {
   min_max.min = INT_MAX;
   min_max.max = INT_MIN;
 
-  for (int i = 0; i < pnum; i++) {
+  i=0;
+  for (; i < pnum; i++) {
     int min = INT_MAX;
     int max = INT_MIN;
 
     if (with_files) {
       // read from files
+      fpmin=fopen("min.txt","r");
+      fscanf(fpmin,"%d",&min);
+      fpmax=fopen("max.txt","r");
+      fscanf(fpmax,"%d",&max);
+      fclose(fpmin);
+      fclose(fpmax);
     } else {
       // read from pipes
+      close(pipefd[1]);     // закрываем сторону для записи
+      read(pipefd[0], &min, sizeof(int));
+      read(pipefd[0], &max, sizeof(int));
+      if (i == (pnum-1)){
+          close(pipefd[0]); // можно закрыть сторону для чтения,
+                            //когда прочитали информацию последнего процесса
+      }
     }
 
     if (min < min_max.min) min_max.min = min;
