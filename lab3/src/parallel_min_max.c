@@ -97,18 +97,19 @@ int main(int argc, char **argv) {
   }
 
   int *array = malloc(sizeof(int) * array_size);
-  GenerateArray(array, array_size, seed);
+//   GenerateArray(array, array_size, seed);
+//   GenerateArray ниже
   int active_child_processes = 0;
 
   struct timeval start_time;
   gettimeofday(&start_time, NULL);
 
   FILE *fpmin,*fpmax;
-  int pipefd[2];    // общий pipe для процессов
+  int pipefd[pnum][2];    // общий pipe для процессов
 
   int i = 0;
   for (; i < pnum; i++) {
-    if (pipe(pipefd) == -1) {
+    if (pipe(pipefd[i]) == -1) {
         exit(1);
     }
     pid_t child_pid = fork();
@@ -117,25 +118,36 @@ int main(int argc, char **argv) {
       active_child_processes += 1;
       if (child_pid == 0) {
         // child process
-
         // parallel somehow
+
+        // разный seed для генерации различных массивов
+        seed = seed * (i+1);    // допустим
+        GenerateArray(array, array_size, seed);
 
         if (with_files) {
           // use files here
           struct MinMax min_max = GetMinMax(array,0,array_size);
-          fpmin=fopen("min.txt", "w");
+
+          // отдельные файлы для каждого дочернего процесса
+          char min_file[10];
+          sprintf(min_file, "min%d.txt", i+1);
+          char max_file[10];
+          sprintf(max_file, "max%d.txt", i+1);
+
+          fpmin=fopen(min_file, "w");
           fprintf(fpmin,"%d",min_max.min);
-          fpmax=fopen("max.txt","w");
+          fpmax=fopen(max_file,"w");
           fprintf(fpmax,"%d",min_max.max);
           fclose(fpmin);
           fclose(fpmax);
           exit(0);
         } else {
-          close(pipefd[0]); // закрываем сторону для чтения
+          close(pipefd[i][0]); // закрываем сторону для чтения
           struct MinMax min_max = GetMinMax(array,0,array_size);
-          write(pipefd[1], &min_max.min, sizeof(int));
-          write(pipefd[1], &min_max.max, sizeof(int));
-          close(pipefd[1]);
+          write(pipefd[i][1], &min_max.min, sizeof(int));
+          write(pipefd[i][1], &min_max.max, sizeof(int));
+          printf("pipe %d : min = %d , max = %d\n", i+1, min_max.min, min_max.max);
+          close(pipefd[i][1]);
           exit(0);
         }
         return 0;
@@ -164,21 +176,23 @@ int main(int argc, char **argv) {
 
     if (with_files) {
       // read from files
-      fpmin=fopen("min.txt","r");
+      char min_file[10];
+      sprintf(min_file, "min%d.txt", i+1);
+      char max_file[10];
+      sprintf(max_file, "max%d.txt", i+1);
+
+      fpmin=fopen(min_file,"r");
       fscanf(fpmin,"%d",&min);
-      fpmax=fopen("max.txt","r");
+      fpmax=fopen(max_file,"r");
       fscanf(fpmax,"%d",&max);
       fclose(fpmin);
       fclose(fpmax);
     } else {
       // read from pipes
-      close(pipefd[1]);     // закрываем сторону для записи
-      read(pipefd[0], &min, sizeof(int));
-      read(pipefd[0], &max, sizeof(int));
-      if (i == (pnum-1)){
-          close(pipefd[0]); // можно закрыть сторону для чтения,
-                            //когда прочитали информацию последнего процесса
-      }
+      close(pipefd[i][1]);     // закрываем сторону для записи
+      read(pipefd[i][0], &min, sizeof(int));
+      read(pipefd[i][0], &max, sizeof(int));
+      close(pipefd[i][0]);
     }
 
     if (min < min_max.min) min_max.min = min;
