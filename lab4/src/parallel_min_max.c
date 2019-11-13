@@ -18,6 +18,7 @@
 
 pid_t* children;
 int pnum;
+int active_child_processes = 0;
 
 void my_alarm(){
     int status;
@@ -29,6 +30,7 @@ void my_alarm(){
             printf("%d is eliminated\n", children[i]);
         } else {
             printf("%d is finished\n", children[i]);
+            active_child_processes--;
         }
     }
 }
@@ -128,7 +130,7 @@ int main(int argc, char **argv) {
   int *array = malloc(sizeof(int) * array_size);
 //   GenerateArray(array, array_size, seed);
 //   GenerateArray ниже
-  int active_child_processes = 0;
+// int active_child_processes = 0;
 
   struct timeval start_time;
   gettimeofday(&start_time, NULL);
@@ -201,13 +203,14 @@ int main(int argc, char **argv) {
 if (timeout != -1){
     signal(SIGALRM, my_alarm);
     alarm(timeout);
-    //pause();
-} else {
-  while (active_child_processes > 0) {
+    pause();
+}
+
+// получаем информацию об убитых процессах
+while (active_child_processes > 0) {
     // your code here
     wait(0);
     active_child_processes -= 1;
-  }
 }
 
   struct MinMax min_max;
@@ -257,5 +260,8 @@ if (timeout != -1){
   printf("Max: %d\n", min_max.max);
   printf("Elapsed time: %fms\n", elapsed_time);
   fflush(NULL);
+
+  sleep(60);
+
   return 0;
 }

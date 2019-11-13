@@ -1,0 +1,1 @@
+ps aux | grep -w Z
