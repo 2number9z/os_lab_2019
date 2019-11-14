@@ -3,3 +3,6 @@ parallel : parallel_min_max.c /projects/2number9z-os_lab_2019/lab3/src/utils.c /
 
 mem : process_memory.c
 	gcc -o mem process_memory.c
+
+sum : parallel_sum.c /projects/2number9z-os_lab_2019/lab3/src/utils.c
+	gcc parallel_sum.c /projects/2number9z-os_lab_2019/lab3/src/utils.c -lpthread -o sum
