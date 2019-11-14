@@ -4,26 +4,27 @@
 #include <stdbool.h>
 #include <getopt.h>
 #include <sys/time.h>
+#include "sum.h"
 
 #include <pthread.h>
 
 #include "/projects/2number9z-os_lab_2019/lab3/src/utils.h"
 
-struct SumArgs {
-  int *array;
-  int begin;
-  int end;
-};
+// struct SumArgs {
+//   int *array;
+//   int begin;
+//   int end;
+// };
 
-int Sum(const struct SumArgs *args) {
-  int sum = 0;
-  // TODO: your code here
-  int i = (*args).begin;
-  for (; i < (*args).end; i++){
-      sum += (*args).array[i];
-  }
-  return sum;
-}
+// int Sum(const struct SumArgs *args) {
+//   int sum = 0;
+//   // TODO: your code here
+//   int i = (*args).begin;
+//   for (; i < (*args).end; i++){
+//       sum += (*args).array[i];
+//   }
+//   return sum;
+// }
 
 void *ThreadSum(void *args) {
   struct SumArgs *sum_args = (struct SumArgs *)args;
