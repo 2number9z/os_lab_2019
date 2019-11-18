@@ -97,7 +97,7 @@ int main(int argc, char **argv) {
   }
 
   int *array = malloc(sizeof(int) * array_size);
-//   GenerateArray(array, array_size, seed);
+  GenerateArray(array, array_size, seed);
 //   GenerateArray ниже
   int active_child_processes = 0;
 
@@ -119,14 +119,12 @@ int main(int argc, char **argv) {
       if (child_pid == 0) {
         // child process
         // parallel somehow
-
-        // разный seed для генерации различных массивов
-        seed = seed * (i+1);    // допустим
-        GenerateArray(array, array_size, seed);
+        int begin = array_size/pnum*i;
+        int end = array_size/pnum*(i+1);
 
         if (with_files) {
           // use files here
-          struct MinMax min_max = GetMinMax(array,0,array_size);
+          struct MinMax min_max = GetMinMax(array,begin,end);
 
           // отдельные файлы для каждого дочернего процесса
           char min_file[10];
@@ -143,7 +141,7 @@ int main(int argc, char **argv) {
           exit(0);
         } else {
           close(pipefd[i][0]); // закрываем сторону для чтения
-          struct MinMax min_max = GetMinMax(array,0,array_size);
+          struct MinMax min_max = GetMinMax(array,begin,end);
           write(pipefd[i][1], &min_max.min, sizeof(int));
           write(pipefd[i][1], &min_max.max, sizeof(int));
           printf("pipe %d : min = %d , max = %d\n", i+1, min_max.min, min_max.max);
