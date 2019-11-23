@@ -7,16 +7,16 @@
 #include <sys/types.h>
 #include <unistd.h>
 
-#define BUFSIZE 100
+// #define BUFSIZE 100
 #define SADDR struct sockaddr
 #define SIZE sizeof(struct sockaddr_in)
 
 int main(int argc, char *argv[]) {
   int fd;
   int nread;
-  char buf[BUFSIZE];
+  char buf[atoi(argv[3])];
   struct sockaddr_in servaddr;
-  if (argc < 3) {
+  if (argc < 4) {
     printf("Too few arguments \n");
     exit(1);
   }
@@ -42,7 +42,7 @@ int main(int argc, char *argv[]) {
   }
 
   write(1, "Input message to send\n", 22);
-  while ((nread = read(0, buf, BUFSIZE)) > 0) {
+  while ((nread = read(0, buf, atoi(argv[3]))) > 0) {
     if (write(fd, buf, nread) < 0) {
       perror("write");
       exit(1);
