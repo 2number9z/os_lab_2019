@@ -46,12 +46,13 @@ int main(int argc, char **argv) {
       exit(1);
     }
 
-    if (recvfrom(sockfd, recvline, atoi(argv[3]), 0, NULL, NULL) == -1) {
-      perror("recvfrom problem");
-      exit(1);
-    }
+    // чтобы не подвисало , если не получили ответ от сервера
+    // if (recvfrom(sockfd, recvline, atoi(argv[3]), 0, NULL, NULL) == -1) {
+    //   perror("recvfrom problem");
+    //   exit(1);
+    // }
 
-    printf("REPLY FROM SERVER= %s\n", recvline);
+    // printf("REPLY FROM SERVER= %s\n", recvline);
   }
   close(sockfd);
 }

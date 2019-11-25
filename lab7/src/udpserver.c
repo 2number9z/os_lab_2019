@@ -15,6 +15,7 @@
 
 int main(int argc, char **argv) {
   int sockfd, n;
+  int sock2 = 0;
   char mesg[atoi(argv[2])], ipadr[16];
   struct sockaddr_in servaddr;
   struct sockaddr_in cliaddr;
@@ -41,6 +42,9 @@ int main(int argc, char **argv) {
   printf("SERVER starts...\n");
 
   while (1) {
+      if (sock2 != 0){
+          sockfd = sock2;
+      }
     unsigned int len = SLEN;
 
     if ((n = recvfrom(sockfd, mesg, atoi(argv[2]), 0, (SADDR *)&cliaddr, &len)) < 0) {
@@ -56,6 +60,20 @@ int main(int argc, char **argv) {
     if (sendto(sockfd, mesg, n, 0, (SADDR *)&cliaddr, len) < 0) {
       perror("sendto");
       exit(1);
+    }
+
+    // падение сервера = сокет не может принимать данные
+    shutdown(sockfd, SHUT_RDWR);
+    close(sockfd);
+    sleep(5);
+
+    if ((sock2 = socket(AF_INET, SOCK_DGRAM, 0)) < 0) {
+        perror("socket problem");
+        exit(1);
+    }
+    if (bind(sock2, (SADDR *)&servaddr, SLEN) < 0) {
+        perror("bind problem");
+        exit(1);
     }
   }
 }
